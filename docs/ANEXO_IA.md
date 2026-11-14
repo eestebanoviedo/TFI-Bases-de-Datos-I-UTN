@@ -1,85 +1,152 @@
-# ANEXO IA – REGISTRO DE INTERACCIONES Y PROCESO PEDAGÓGICO
-## TFI BASES DE DATOS I – TECNICATURA UNIVERSITARIA EN PROGRAMACIÓN (UTN)
+# ANEXO IA – EVIDENCIA DE USO PEDAGÓGICO DE INTELIGENCIA ARTIFICIAL
+## TRABAJO FINAL INTEGRADOR - BASES DE DATOS I (UTN)
 
-**Estudiante:** Esteban Oviedo  
-**Asistente IA:** Antigravity / Gemini  
-**Criterio Metodológico:** En concordancia con el Anexo I de la cátedra, la Inteligencia Artificial fue utilizada exclusivamente como tutor pedagógico y guía reflexiva, brindando pistas progresivas y validando razonamientos sin proveer soluciones cerradas en bloque.
+**Alumno:** Esteban Oviedo  
+**Carrera:** Tecnicatura Universitaria en Programación a Distancia  
+**Materia:** Bases de Datos I  
+**Instrucción de Entrega:** Según las pautas del documento del TFI (Página 3), este anexo debe incluir el texto completo de las interacciones con IA utilizadas como tutoría durante el desarrollo, organizadas por etapa.
 
----
-
-### ETAPA 1: Modelado y Definición de Constraints
-
-**Prompt Inicial del Estudiante:**
-> "Hola. Estoy comenzando la Etapa 1 del TFI de Bases de Datos I. Vengo de Programación II con un sistema de Libros y Fichas Bibliográficas (1 a 1). En MySQL 8 solo tenía claves primarias autoincrementales y una FK en `libro.ficha_id` con `UNIQUE`. ¿Mi elección de claves y restricciones es suficiente o me convendría incorporar restricciones adicionales para garantizar integridad física? Guíame con preguntas o pistas sin darme el código de golpe."
-
-**Respuesta Pedagógica de la IA:**
-> "¡Hola! Excelente inicio. Analicemos juntos las reglas del motor relacional:
-> 1. Respecto a la clave foránea `ficha_id` con `UNIQUE`, vas por buen camino: eso modela físicamente una relación 1 a 1. Pero pensá: ¿qué ocurre si alguien borra una ficha física? ¿Querés que el libro se borre en cascada o que la referencia quede en NULL?
-> 2. Pensemos ahora en el dominio de los atributos. Si alguien inserta un libro con año `3500` o con título vacío `""`, ¿el motor actualmente lo rechazaría o lo guardaría silenciosamente?
-> 3. En MySQL 8, las restricciones `CHECK` ya son evaluadas estrictamente. ¿Qué condición matemática o de longitud podrías aplicar sobre `anio_edicion` y sobre `titulo` para evitar datos absurdos?"
-
-**Reflexión y Decisión del Estudiante:**
-> "Tiene sentido. Agregué `ON DELETE SET NULL` para no perder los libros si se elimina una ficha física. Además, incorporé restricciones `CHECK`: para el año definí que sea mayor o igual al 868 d.C. (año del Sutra del Diamante) y menor o igual al año corriente (2026). Para el título y el autor utilicé `CHAR_LENGTH(TRIM(columna)) > 0` para evitar espacios en blanco vacíos. Al probar con año 2999, MySQL disparó exitosamente el `Error 3819 (HY000): Check constraint 'chk_libro_anio_valido' is violated`."
+> **NOTA DE INTEGRIDAD ACADÉMICA Y AUDITORÍA:**  
+> En cumplimiento estricto con las directivas pedagógicas, este documento no contiene conversaciones ficticias ni simuladas. A continuación se presentan las secciones correspondientes a cada etapa, delimitadas con plantillas estructuradas listas para incorporar los registros y exportaciones textuales de los chats mantenidos con los asistentes inteligentes (ChatGPT, Gemini, Claude o Copilot).
 
 ---
 
-### ETAPA 2: Carga Masiva con SQL Puro
+## ESTRUCTURA DEL PROMPT GENERAL RECOMENDADO POR LA CÁTEDRA (Anexo I)
 
-**Prompt Inicial del Estudiante:**
-> "Para la Etapa 2 tengo que generar al menos 10.000 registros repartidos entre libro y ficha bibliográfica usando exclusivamente SQL puro, respetando la relación 1 a 1 y sin usar Java ni scripts de Python externos. ¿Qué estrategia en SQL me recomendás explorar para lograr ese volumen de forma rápida y reproducible?"
-
-**Respuesta Pedagógica de la IA:**
-> "Pensemos en los mecanismos nativos de SQL:
-> - Una opción es un `WITH RECURSIVE`, pero recordá que MySQL tiene un límite de profundidad (`cte_max_recursion_depth` que por defecto suele ser 1.000).
-> - ¿Qué otra operación en SQL combina conjuntos multiplicativamente sin necesidad de recursión? Si creás una tabla temporal con 10 dígitos (del 0 al 9) y hacés un producto cartesiano (`CROSS JOIN`) de esa tabla consigo misma 4 veces, ¿cuántas combinaciones numéricas únicas obtenés?
-> - Luego, ¿cómo usarías el operador módulo (`MOD`) para asignar autores y editoriales desde tablas semilla sin que queden todos con el mismo valor?"
-
-**Reflexión y Decisión del Estudiante:**
-> "¡Claro! Con 4 tablas de 10 dígitos en producto cartesiano obtengo exactamente $10 \times 10 \times 10 \times 10 = 10.000$ números en milisegundos sin preocuparme por la configuración de la recursión. Para mantener la cardinalidad 1 a 1 estricta, inserté primero las 10.000 fichas con ID del 1 al 10.000 y luego los 10.000 libros forzando `ficha_id = n`. Verifiqué con un `LEFT JOIN` y obtuve exactamente 0 claves huérfanas y 0 duplicados."
-
----
-
-### ETAPA 3: Consultas Complejas, Índices y Benchmarking
-
-**Prompt Inicial del Estudiante:**
-> "Tengo 20.000 registros poblados. Diseñé una consulta para buscar libros por autor (`WHERE autor = 'Jorge Luis Borges'`) y otra por año de edición. Al ejecutar `EXPLAIN ANALYZE` sin índices veo que tarda varios milisegundos y dice 'Table scan'. ¿Cómo debería interpretar el costo y cómo aseguro en la prueba que MySQL use el índice o no lo use?"
-
-**Respuesta Pedagógica de la IA:**
-> "Fijate en dos elementos clave del plan de ejecución de MySQL:
-> 1. `Table scan` significa que InnoDB debe leer página por página todo el espacio de almacenamiento de la tabla (las 10.000 filas) evaluando la condición fila por fila.
-> 2. Si creás un índice B-Tree en `autor`, el motor realiza un `Index lookup`, yendo directamente a las ramas del árbol donde coinciden las claves.
-> 3. Para la medición comparativa requerida por la consigna, podés usar las cláusulas del optimizador: `FORCE INDEX (nombre_indice)` para garantizar el camino indexado, y `IGNORE INDEX (nombre_indice)` para forzar el escaneo secuencial y comparar los tiempos reales con la mediana de 3 corridas."
-
-**Reflexión y Decisión del Estudiante:**
-> "Apliqué `FORCE INDEX` e `IGNORE INDEX`. Los resultados fueron concluyentes: en la búsqueda de igualdad por autor, el costo bajó de 1418 a 182 y el tiempo de ejecución se redujo de 9.21 ms a 2.34 ms (casi 4 veces más rápido). Comprendí que el índice B-Tree evita examinar las 10.000 páginas de datos de la tabla."
+Para las consultas realizadas a la IA en cada etapa, se toma como marco rector el prompt del Anexo I:
+```text
+"Estás interactuando con un estudiante de la materia Base de Datos I de una Tecnicatura Superior. 
+El estudiante está resolviendo un Trabajo Práctico sobre modelos entidad–relación y modelo relacional.
+Instrucciones para la IA:
+1. No des la solución completa de manera directa.
+2. Ofrece pistas graduales que guíen al estudiante hacia la respuesta correcta.
+3. Señala los errores conceptuales o de sintaxis de forma clara y respetuosa.
+4. Explica los motivos de cada corrección y, cuando corresponda, da ejemplos similares.
+5. Si el estudiante se queda bloqueado, sugiere pasos intermedios o preguntas disparadoras.
+6. Utiliza un lenguaje accesible, evitando tecnicismos innecesarios."
+```
 
 ---
 
-### ETAPA 4: Seguridad e Integridad
+## ETAPA 1 – MODELADO Y DEFINICIÓN DE CONSTRAINTS
 
-**Prompt Inicial del Estudiante:**
-> "Para la Etapa 4 creé dos vistas para ocultar datos y un usuario acotado. En la parte de Java, mi proyecto anterior de Programación II ya usaba `PreparedStatement`. ¿Cómo demuestro pedagógicamente en la entrega que este código previene un ataque de SQL Injection frente a una consulta concatenada?"
+### Objetivo Pedagógico de la Interacción:
+Consultar sobre la elección de claves primarias, claves foráneas, restricción `UNIQUE` para relación 1 a 1 y restricciones de validación `CHECK` para campos como `anio_edicion` y `titulo`.
 
-**Respuesta Pedagógica de la IA:**
-> "Para demostrarlo con rigor científico y evidencia práctica:
-> 1. Diseñá una clase de demostración donde ejecutes la misma entrada del usuario maliciosa (por ejemplo, `' OR '1'='1`) a través de un `Statement` concatenado (`SELECT ... WHERE titulo LIKE '%" + input + "%'`) y luego a través del `PreparedStatement` de tu DAO.
-> 2. Analizá qué le sucede al árbol sintáctico del SQL en cada caso: ¿Por qué en el primero la base de datos devuelve miles de registros no autorizados y en el segundo devuelve 0?"
+### Registro de Interacción:
+```text
+[PEGAR AQUÍ EL TEXTO COMPLETO DEL CHAT CON IA UTILIZADO PARA LA ETAPA 1]
+Fecha de la interacción: [DD/MM/AAAA]
+Herramienta de IA utilizada: [ChatGPT / Gemini / Claude / Copilot]
 
-**Reflexión y Decisión del Estudiante:**
-> "Creé la clase `DemoSqlInjection.java`. Al pasarle `' OR '1'='1`, la consulta vulnerable con `Statement` alteró la lógica booleana del `WHERE` y devolvió los 9.801 libros de la base. En cambio, con el `PreparedStatement` del DAO, el driver transmitió el parámetro como un literal de búsqueda escapado, retornando 0 registros sin alterar la estructura gramatical del SQL."
+Ejemplo de consulta disparadora:
+"Tengo una relación 1 a 1 entre Libro y FichaBibliografica. ¿Es correcto colocar la FK ficha_id en Libro con UNIQUE o convendría poner libro_id en FichaBibliografica? ¿Qué restricciones CHECK recomendás para evitar años absurdos o títulos vacíos?"
+
+Transcripción:
+...
+```
+
+### Reflexión del Estudiante sobre las Sugerencias Recibidas:
+```text
+[Sintetizar aquí en 3-5 líneas cómo las respuestas de la IA influyeron en la definición final de constraints de 01_esquema.sql y la decisión de usar ON DELETE SET NULL]
+```
 
 ---
 
-### ETAPA 5: Concurrencia y Transacciones
+## ETAPA 2 – GENERACIÓN Y CARGA DE DATOS MASIVOS CON SQL PURO
 
-**Prompt Inicial del Estudiante:**
-> "Estoy con la simulación del Deadlock y el manejo de reintentos. Logré forzar el error 1213 en dos sesiones de terminal haciendo updates cruzados. En Java, ¿cuál es el patrón estándar para implementar el retry con backoff cuando la base de datos aborta una transacción por deadlock?"
+### Objetivo Pedagógico de la Interacción:
+Explorar mecanismos en SQL puro para generar entre 10.000 y 20.000+ registros distribuidos entre dos tablas relacionadas 1 a 1, garantizando integridad referencial (0 huérfanos) sin recurrir a lenguajes externos.
 
-**Respuesta Pedagógica de la IA:**
-> "Pensemos en el ciclo de vida de la transacción ante una excepción:
-> 1. Si capturás una `SQLException`, ¿qué códigos de error identifican inequívocamente al deadlock en MySQL? (Revisá tanto `getErrorCode()` como `getSQLState()`).
-> 2. Al ocurrir el deadlock, InnoDB ya ejecutó el rollback de la transacción víctima. ¿Tiene sentido reintentar inmediatamente en el microsegundo 0 o conviene esperar una fracción de segundo para permitir que la otra transacción termine su commit?
-> 3. ¿Cómo evitarías un bucle infinito si la contención persiste? Establecé una cantidad máxima de reintentos (ej. 2 reintentos) y multiplicá el tiempo de espera por cada intento fallido (*exponential backoff*)."
+### Registro de Interacción:
+```text
+[PEGAR AQUÍ EL TEXTO COMPLETO DEL CHAT CON IA UTILIZADO PARA LA ETAPA 2]
+Fecha de la interacción: [DD/MM/AAAA]
+Herramienta de IA utilizada: [ChatGPT / Gemini / Claude / Copilot]
 
-**Reflexión y Decisión del Estudiante:**
-> "Implementé el método con reintento en `LibroServiceImpl` y lo validé mediante `DemoDeadlockRetry.java`. Capturé el código de error `1213` (o SQLSTATE `'40001'`), apliqué una pausa de espera exponencial (`200 ms * intento`) y logré que el hilo víctima se recuperara automáticamente en el intento #2, completando el 100% de las transacciones con éxito y sin pérdida de consistencia."
+Ejemplo de consulta disparadora:
+"Necesito generar más de 10.000 registros en MySQL con SQL puro respetando una relación 1 a 1 entre dos tablas. ¿Qué diferencia de rendimiento y límites hay entre usar WITH RECURSIVE vs un producto cartesiano de dígitos (CROSS JOIN)? ¿Cómo garantizo que no queden claves foráneas huérfanas?"
+
+Transcripción:
+...
+```
+
+### Reflexión del Estudiante sobre las Sugerencias Recibidas:
+```text
+[Sintetizar aquí en 3-5 líneas el análisis de la sugerencia (ej. evitar límites de cte_max_recursion_depth usando producto cartesiano de dígitos y aritmética modular con MOD)]
+```
+
+---
+
+## ETAPA 3 – CONSULTAS AVANZADAS, REPORTES E ÍNDICES
+
+### Objetivo Pedagógico de la Interacción:
+Consultar sobre la optimización de planes de ejecución, interpretación de `EXPLAIN` / `EXPLAIN ANALYZE` y el impacto de índices B-Tree en consultas de igualdad, rango y JOIN.
+
+### Registro de Interacción:
+```text
+[PEGAR AQUÍ EL TEXTO COMPLETO DEL CHAT CON IA UTILIZADO PARA LA ETAPA 3]
+Fecha de la interacción: [DD/MM/AAAA]
+Herramienta de IA utilizada: [ChatGPT / Gemini / Claude / Copilot]
+
+Ejemplo de consulta disparadora:
+"Ejecuté EXPLAIN ANALYZE sobre una consulta con WHERE autor = '...' y otra con BETWEEN de años. En una veo 'Table scan' y en otra 'Index lookup'. ¿Qué representa el costo y las filas estimadas en MySQL? ¿Cómo uso FORCE INDEX e IGNORE INDEX para medir con rigor la mediana de 3 corridas?"
+
+Transcripción:
+...
+```
+
+### Reflexión del Estudiante sobre las Sugerencias Recibidas:
+```text
+[Sintetizar aquí en 3-5 líneas cómo la IA colaboró en la interpretación de los costos y la justificación técnica de la mejora obtenida en el benchmark]
+```
+
+---
+
+## ETAPA 4 – SEGURIDAD E INTEGRIDAD
+
+### Objetivo Pedagógico de la Interacción:
+Consultar sobre la implementación del principio de menor privilegio con `CREATE USER` y `GRANT`, diseño de vistas para ocultamiento de datos sensibles y prevención de SQL Injection mediante `PreparedStatement`.
+
+### Registro de Interacción:
+```text
+[PEGAR AQUÍ EL TEXTO COMPLETO DEL CHAT CON IA UTILIZADO PARA LA ETAPA 4]
+Fecha de la interacción: [DD/MM/AAAA]
+Herramienta de IA utilizada: [ChatGPT / Gemini / Claude / Copilot]
+
+Ejemplo de consulta disparadora:
+"Quiero crear un usuario de base de datos para la aplicación que solo pueda consultar vistas y modificar registros sin permiso de DELETE físico ni DROP. ¿Qué permisos exactos debo darle? Y en Java, ¿cómo explico técnicamente por qué PreparedStatement neutraliza una inyección como ' OR '1'='1?"
+
+Transcripción:
+...
+```
+
+### Reflexión del Estudiante sobre las Sugerencias Recibidas:
+```text
+[Sintetizar aquí en 3-5 líneas la aplicación de permisos restringidos en 07_seguridad.sql y la demostración en Java de DemoSqlInjection]
+```
+
+---
+
+## ETAPA 5 – CONCURRENCIA Y TRANSACCIONES
+
+### Objetivo Pedagógico de la Interacción:
+Consultar sobre el diagnóstico de bloqueos, análisis del Error 1213 / SQLSTATE 40001 (Deadlock) en InnoDB y diseño del algoritmo de reintentos con backoff exponencial en Java.
+
+### Registro de Interacción:
+```text
+[PEGAR AQUÍ EL TEXTO COMPLETO DEL CHAT CON IA UTILIZADO PARA LA ETAPA 5]
+Fecha de la interacción: [DD/MM/AAAA]
+Herramienta de IA utilizada: [ChatGPT / Gemini / Claude / Copilot]
+
+Ejemplo de consulta disparadora:
+"Estoy probando transacciones concurrentes en dos sesiones MySQL y forcé un Deadlock. ¿Qué criterio usa InnoDB para elegir a la víctima? En Java, ¿cuál es la mejor práctica para capturar el error 1213 y reintentar la transacción con un backoff breve sin bloquear el hilo principal?"
+
+Transcripción:
+...
+```
+
+### Reflexión del Estudiante sobre las Sugerencias Recibidas:
+```text
+[Sintetizar aquí en 3-5 líneas la interpretación del error de deadlock y la integración del retry con backoff en LibroServiceImpl y DemoDeadlockRetry]
+```
