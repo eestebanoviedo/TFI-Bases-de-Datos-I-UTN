@@ -6,7 +6,7 @@
 **Materia:** Bases de Datos I  
 **Dominio:** Sistema de Gestión de Libros y Fichas Bibliográficas (Relación 1:1 Unidireccional)  
 **Entorno de Pruebas:** MySQL 9.5 (Compatible con MySQL 8.0+) / Java 21 LTS con JDBC nativo  
-**Fecha de Auditoría:** Noviembre 2026  
+**Fecha de Validación:** Noviembre 2026  
 
 ---
 
@@ -33,10 +33,12 @@ La relación es **1 a 1 estricta y unidireccional**: la tabla `libro` posee la c
 * **Validación de Dominio (CHECK)**:
   - `chk_libro_titulo_no_vacio`: `CHAR_LENGTH(TRIM(titulo)) > 0`.
   - `chk_libro_autor_no_vacio`: `CHAR_LENGTH(TRIM(autor)) > 0`.
-  - `chk_libro_anio_valido`: `anio_edicion IS NULL OR (anio_edicion >= 868 AND anio_edicion <= 2026)` (año 868: Sutra del Diamante).
+  - `chk_libro_anio_valido`: `anio_edicion IS NULL OR (anio_edicion >= 868 AND anio_edicion <= 2026)`.
   - `chk_ficha_isbn_formato`: `isbn IS NULL OR CHAR_LENGTH(TRIM(isbn)) >= 10`.
   - `chk_ficha_dewey_no_vacio`: `clasificacion_dewey IS NULL OR CHAR_LENGTH(TRIM(clasificacion_dewey)) > 0`.
   - `chk_ficha_idioma_no_vacio`: `idioma IS NULL OR CHAR_LENGTH(TRIM(idioma)) > 0`.
+
+![Evidencia DDL y Constraints](evidencias/etapa1/e1_ddl_esquema_constraints.png)
 
 ### 2.2 Pruebas de Integridad Ejecutadas (`01_pruebas_restricciones.sql`)
 
@@ -50,6 +52,8 @@ Todas las pruebas fueron ejecutadas directamente en el servidor MySQL local:
 | **E2** | Infracción UNIQUE | Inserción de ficha con ISBN ya existente | `ERROR 1062 (23000): Duplicate entry '978-0141439518' for key 'ficha_bibliografica.uq_ficha_isbn'` | **RECHAZO CORRECTO** |
 | **E3** | Infracción 1:1 | Asignación de una misma `ficha_id` a dos libros | `ERROR 1062 (23000): Duplicate entry '1' for key 'libro.uq_libro_ficha_id'` | **RECHAZO CORRECTO** |
 | **E4** | Infracción FK | Inserción de libro con `ficha_id = 999999` inexistente | `ERROR 1452 (23000): Cannot add or update a child row: a foreign key constraint fails` | **RECHAZO CORRECTO** |
+
+![Evidencia de Errores de Integridad](evidencias/etapa1/e1_pruebas_restricciones_errores.png)
 
 ---
 
@@ -72,24 +76,40 @@ Resultados exactos obtenidos tras ejecutar la verificación sobre el servidor:
 +----------------------------+--------------+--------------+-----------------+
 | Verificación               | total_fichas | total_libros | total_acumulado |
 +----------------------------+--------------+--------------+-----------------+
-| Conteo Total               | 10000        | 10000        | 20000           |
+| Conteo Total               | 10001        | 10001        | 20002           |
 +----------------------------+--------------+--------------+-----------------+
 | Claves Foráneas Huérfanas  | 0 huérfanos                                   |
 | Duplicados en Relación 1:1 | 0 colisiones (100% unicidad)                  |
 | Rango de Años de Edición   | Mínimo: 1900 | Máximo: 2019 | Inválidos: 0    |
-| Distribución de Estados    | Activos: 9800 (98%) | Baja Lógica: 200 (2.0%) |
+| Distribución de Estados    | Activos: 9801 (98%) | Baja Lógica: 200 (2.0%) |
 +----------------------------+--------------+--------------+-----------------+
 ```
+
+![Evidencia de Verificación de Consistencia](evidencias/etapa2/e2_verificacion_consistencia_20002_filas.png)
 
 ---
 
 ## 4. Etapa 3 – Consultas Complejas, Índices y Benchmarking Real
 
 ### 4.1 Utilidad Práctica de las Consultas (`05_consultas.sql`)
-1. **Consulta 1 (JOIN 1:1)**: Localización inmediata en estantería física y clasificación temática para obras activas en un idioma específico.
-2. **Consulta 2 (JOIN + Agregación)**: Reporte de inventario bibliográfico por categoría Dewey e idioma, analizando antigüedad promedio para planificar compras.
-3. **Consulta 3 (GROUP BY + HAVING)**: Segmentación de editoriales de alto volumen (más de 650 obras registradas en catálogo) para convenios comerciales.
-4. **Consulta 4 (Subconsulta Correlacionada)**: Identificación de obras contemporáneas de cada autor, comparando el año de edición del libro contra la media histórica de su propio autor.
+
+#### Consulta 1 (JOIN 1:1): Catálogo Físico de Obras Activas
+Permite al personal y usuarios localizar en qué estantería física se encuentra cada ejemplar activo en un idioma determinado, vinculando la ficha técnica (ISBN, Dewey, estantería) con los datos del libro.
+![Evidencia Consulta 1](evidencias/etapa3/e3_c1_join_catalogo.png)
+
+#### Consulta 2 (JOIN + Agregación Multi-tabla): Inventario Analítico
+Reporte analítico de inventario por código Dewey e idioma, calculando totales de ejemplares y promedios de antigüedad para orientar compras y descarte.
+![Evidencia Consulta 2](evidencias/etapa3/e3_c2_join_agregacion_inventario.png)
+
+#### Consulta 3 (GROUP BY + HAVING): Editoriales Principales con Alto Volumen
+Segmenta a las casas editoriales con más de 650 obras registradas en catálogo activo, facilitando convenios institucionales por volumen.
+![Evidencia Consulta 3](evidencias/etapa3/e3_c3_group_having_editoriales.png)
+
+#### Consulta 4 (Subconsulta Correlacionada): Obras Contemporáneas por Autor
+Identifica libros cuya fecha de edición supera el año promedio de publicación de las obras de su mismo autor, permitiendo destacar títulos de madurez literaria.
+![Evidencia Consulta 4](evidencias/etapa3/e3_c4_subconsulta_autores.png)
+
+---
 
 ### 4.2 Medición Comparativa de Rendimiento (18 Corridas Reales)
 
@@ -110,20 +130,31 @@ En estricto cumplimiento con la consigna, se ejecutaron **3 corridas consecutiva
 +------------------+------------------------------------+--------------------------------+-----------------+
 ```
 
-#### Comparación de Planes de Ejecución (`EXPLAIN ANALYZE`):
-* **Consulta por Igualdad con Índice (`FORCE INDEX (idx_libro_autor)`)**:
-  `-> Index lookup on libro using idx_libro_autor (autor = 'Jorge Luis Borges') (cost=182 rows=519) (actual time=0.39..2.34 rows=400 loops=1)`
-* **Consulta por Igualdad sin Índice (`IGNORE INDEX (idx_libro_autor)`)**:
-  `-> Filter: (libro.autor = 'Jorge Luis Borges') (cost=1418 rows=519) -> Table scan on libro (cost=1418 rows=12976) (actual time=0.12..9.81 rows=10000 loops=1)`
+![Evidencia Benchmark de Tiempos y Medianas](evidencias/etapa3/e3_benchmark_tiempos_medianas.png)
 
-**Conclusión:** El índice secundario B-Tree reduce el costo estimado del optimizador de **1418 a 182** y evita recorrer secuencialmente las 10.000 páginas de datos de la tabla.
+#### Planes de Ejecución (`EXPLAIN ANALYZE`):
+
+* **Consulta de Igualdad**:
+  - *Con Índice*: `Index lookup on libro using idx_libro_autor (autor = 'Jorge Luis Borges') (cost=182 rows=519) (actual time=0.39..2.34 ms rows=400 loops=1)`
+  - *Sin Índice*: `Filter: (libro.autor = 'Jorge Luis Borges') (cost=1418) -> Table scan on libro (cost=1418 rows=12976) (actual time=0.12..9.81 ms rows=10000 loops=1)`
+  ![Evidencia EXPLAIN Igualdad](evidencias/etapa3/e3_explain_igualdad_con_sin_indice.png)
+
+* **Consulta de Rango**:
+  - *Con Índice*: `Index range scan on libro using idx_libro_anio over (1970 <= anio_edicion <= 1980) (cost=0.71) (actual time=0.04..2.79 ms rows=1111 loops=1)`
+  - *Sin Índice*: `Filter: (libro.anio_edicion between 1970 and 1980) (cost=1418) -> Table scan on libro (cost=1418) (actual time=0.05..4.09 ms rows=1111 loops=1)`
+  ![Evidencia EXPLAIN Rango](evidencias/etapa3/e3_explain_rango_con_sin_indice.png)
+
+* **Consulta con JOIN**:
+  - *Con Índice*: `Nested loop inner join (cost=530) -> Index lookup on f using idx_ficha_dewey (cost=212) -> Single-row index lookup on l (cost=0.25)`
+  - *Sin Índice*: `Nested loop inner join (cost=1082) -> Table scan on f (cost=831 rows=7904)`
+  ![Evidencia EXPLAIN JOIN](evidencias/etapa3/e3_explain_join_con_sin_indice.png)
 
 ---
 
 ## 5. Etapa 4 – Seguridad e Integridad
 
 ### 5.1 Principio de Menor Privilegio (`07_seguridad.sql`)
-Se creó el usuario `usr_biblioteca_app` con permisos exclusivos para operar sobre las vistas y tablas requeridas:
+Se creó el usuario `usr_biblioteca_app` con permisos exclusivos para operar sobre las vistas y tablas requeridas, denegando comandos destructivos (`DELETE` físico, `DROP`, `ALTER`, `GRANT`):
 * `GRANT SELECT ON tpi_biblioteca.vista_catalogo_publico TO 'usr_biblioteca_app'@'localhost';`
 * `GRANT SELECT ON tpi_biblioteca.vista_estadisticas_editorial TO 'usr_biblioteca_app'@'localhost';`
 * `GRANT SELECT, INSERT, UPDATE ON tpi_biblioteca.libro TO 'usr_biblioteca_app'@'localhost';`
@@ -132,6 +163,7 @@ Se creó el usuario `usr_biblioteca_app` con permisos exclusivos para operar sob
 ### 5.2 Ocultamiento en Vistas Seguras (`06_vistas.sql`)
 1. **`vista_catalogo_publico`**: Filtra automáticamente registros con baja lógica (`eliminado = FALSE`), oculta claves técnicas primarias y foráneas, y oculta la ubicación física de depósitos (`estanteria`).
 2. **`vista_estadisticas_editorial`**: Expone métricas agrupadas por editorial sin exponer títulos ni autores individuales.
+![Evidencia Vistas Seguras](evidencias/etapa4/e4_vistas_seguras_contenido.png)
 
 ### 5.3 Pruebas de Control de Acceso (`07_pruebas_seguridad.sql`)
 Ejecutadas autenticándose como `usr_biblioteca_app`:
@@ -139,6 +171,7 @@ Ejecutadas autenticándose como `usr_biblioteca_app`:
 * `DELETE FROM libro WHERE id = 1;` $\rightarrow$ `ERROR 1142 (42000): DELETE command denied to user 'usr_biblioteca_app'@'localhost' for table 'libro'`
 * `DROP TABLE libro;` $\rightarrow$ `ERROR 1142 (42000): DROP command denied to user 'usr_biblioteca_app'@'localhost' for table 'libro'`
 * `SELECT * FROM mysql.user;` $\rightarrow$ `ERROR 1142 (42000): SELECT command denied to user 'usr_biblioteca_app'@'localhost' for table 'user'`
+![Evidencia Permisos Denegados](evidencias/etapa4/e4_seguridad_permisos_denegados_error1142.png)
 
 ### 5.4 Demostración de Mitigación de SQL Injection en Java (`DemoSqlInjection.java`)
 Al evaluar el vector de ataque `' OR '1'='1`:
@@ -146,13 +179,14 @@ Al evaluar el vector de ataque `' OR '1'='1`:
   Generó `... WHERE eliminado = FALSE AND (titulo LIKE '%' OR '1'='1%')`, evaluando la condición como siempre verdadera y **filtrando ilegítimamente 9.801 registros**.
 * **Consulta Parametrizada Segura (`PreparedStatement` en `JdbcLibroDao`)**:  
   El parámetro se transmitió tipado mediante el protocolo binario de MySQL. La entrada se trató como un literal puro, devolviendo **0 registros** sin alterar la sintaxis del comando.
+![Evidencia Mitigación SQL Injection](evidencias/etapa4/e4_java_sql_injection_mitigada.png)
 
 ---
 
 ## 6. Etapa 5 – Concurrencia y Transacciones
 
 ### 6.1 Simulación de Deadlock en Dos Sesiones (`09_concurrencia_guiada.sql`)
-Siguiendo el protocolo guiado en dos sesiones terminales:
+Siguiendo el protocolo guiado en dos sesiones concurrentes:
 1. Sesión 1 adquiere bloqueo exclusivo sobre `libro id=1`.
 2. Sesión 2 adquiere bloqueo exclusivo sobre `libro id=2`.
 3. Sesión 1 intenta actualizar `libro id=2` (queda en espera).
@@ -162,8 +196,14 @@ Siguiendo el protocolo guiado en dos sesiones terminales:
 ```text
 ERROR 1213 (40001): Deadlock found when trying to get lock; try restarting transaction
 ```
+![Evidencia Deadlock Dos Sesiones](evidencias/etapa5/e5_deadlock_dos_sesiones_error1213.png)
 
-### 6.2 Recuperación Automática con Retry en Java (`DemoDeadlockRetry.java`)
+### 6.2 Comparación Práctica de Niveles de Aislamiento
+* **`READ COMMITTED`**: Cada `SELECT` genera su propio snapshot de lectura (*read view*). Cuando una sesión externa confirma un cambio en el intermedio, la transacción lectora observa datos modificados (fenómeno de *Lectura No Repetible*).
+* **`REPEATABLE READ`** (Nivel por defecto en InnoDB): La vista consistente se genera en el primer `SELECT` de la transacción. Las modificaciones confirmadas por otras sesiones no alteran el snapshot del lector gracias a los registros de deshacer (*undo logs / MVCC*).
+![Evidencia Comparativa Aislamiento](evidencias/etapa5/e5_comparativa_aislamiento_read_committed_repeatable_read.png)
+
+### 6.3 Recuperación Automática con Retry en Java (`DemoDeadlockRetry.java`)
 Se probó mediante dos hilos concurrentes compitiendo en orden cruzado por los mismos recursos.
 **Salida de ejecución real de la consola:**
 ```text
@@ -179,10 +219,7 @@ RESUMEN DE EJECUCIÓN:
  - Deadlocks detectados y gestionados: 1
  - Transacciones exitosas finales:    2 / 2
 ```
-
-### 6.3 Comparación de Niveles de Aislamiento
-* **`READ COMMITTED`**: Cada `SELECT` genera su propio snapshot de lectura (*read view*). Si otra sesión confirma un cambio en el intermedio, la transacción lectora observa datos modificados (fenómeno de *Lectura No Repetible*).
-* **`REPEATABLE READ`** (Nivel por defecto en InnoDB): La vista consistente se genera en el primer `SELECT` de la transacción. Las modificaciones confirmadas por otras sesiones no alteran el snapshot del lector gracias a los registros de deshacer (*undo logs / MVCC*).
+![Evidencia Java Deadlock Retry](evidencias/etapa5/e5_java_deadlock_retry_exitoso.png)
 
 ---
 
