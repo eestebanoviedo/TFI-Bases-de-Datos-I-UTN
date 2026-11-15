@@ -1,115 +1,120 @@
 # TFI - Bases de Datos I (UTN)
-## Sistema de Gestión de Libros y Fichas Bibliográficas (Solución Híbrida MySQL 8+ / Java JDBC)
+## Sistema de Gestión de Libros y Fichas Bibliográficas (MySQL 8+ / Java JDBC)
 
 **Alumno:** Esteban Oviedo  
 **Carrera:** Tecnicatura Universitaria en Programación a Distancia  
 **Materia:** Bases de Datos I  
-**Dominio:** 2 Entidades con Relación 1:1 Unidireccional (`Libro` $\rightarrow$ `FichaBibliografica`)  
+**Dominio:** 2 Entidades con Relación 1:1 (`Libro` -> `FichaBibliografica`)  
 
 ---
 
-## 📁 Estructura del Repositorio
+## Estructura del Proyecto
 
 ```text
 TFI-Bases-de-Datos-I-UTN/
 ├── docs/
-│   ├── INFORME_TFI.md               # Memoria técnica completa para PDF del TFI
-│   ├── ANEXO_IA.md                  # Registro pedagógico de interacción con IA (Anexo I)
-│   └── GUION_VIDEO_10_15_MIN.md     # Escaleta y guion oral para la defensa en video
+│   ├── INFORME_TFI.md               # Informe técnico completo del trabajo
+│   ├── ANEXO_IA.md                  # Registro literal de interacción con IA
+│   └── GUION_VIDEO_10_15_MIN.md     # Guion paso a paso para la defensa oral en video
 ├── sql/
-│   ├── 01_esquema.sql               # DDL base con PK, FK, UNIQUE, CHECK y dominios
-│   ├── 01_pruebas_restricciones.sql # [Auxiliar] Pruebas de inserción válidas y fallidas
-│   ├── 02_catalogos.sql             # Catálogos semilla auxiliares para generación
-│   ├── 03_carga_masiva.sql          # Poblado masivo de 20.000 registros con SQL puro
-│   ├── 03_verificaciones_consistencia.sql # [Auxiliar] Cuadro de control de integridad y conteos
-│   ├── 04_indices.sql               # Creación idempotente de índices secundarios
-│   ├── 05_consultas.sql             # 4 consultas complejas de negocio (JOIN, GROUP BY, subconsulta)
-│   ├── 05_explain.sql               # Benchmarks comparativos CON/SIN índice (EXPLAIN ANALYZE)
-│   ├── 06_vistas.sql                # 2 vistas seguras para ocultamiento de información
-│   ├── 07_seguridad.sql             # Creación de usuario acotado (usr_biblioteca_app)
-│   ├── 07_pruebas_seguridad.sql     # [Auxiliar] Pruebas de operaciones permitidas y denegadas
-│   ├── 08_transacciones.sql         # Demostración ACID en SQL (COMMIT y ROLLBACK)
-│   └── 09_concurrencia_guiada.sql   # Guía paso a paso para dos sesiones: Deadlocks y Niveles de Aislamiento
-├── src/                             # Código Java 21+ con JDBC nativo (Programación II extendido)
-│   ├── config.properties            # Configuración de conexión MySQL
+│   ├── 01_esquema.sql               # Creación de tablas, claves y restricciones CHECK
+│   ├── 01_pruebas_restricciones.sql # Pruebas de inserciones válidas y de rechazo
+│   ├── 02_catalogos.sql             # Listas de autores, editoriales y categorías semilla
+│   ├── 03_carga_masiva.sql          # Carga de 20.000 registros usando solo SQL
+│   ├── 03_verificaciones_consistencia.sql # Conteo total, huérfanos y estado 1:1
+│   ├── 04_indices.sql               # Creación de índices secundarios
+│   ├── 05_consultas.sql             # 4 consultas de negocio (JOIN, agrupaciones, subconsulta)
+│   ├── 05_explain.sql               # Benchmark de rendimiento con y sin índices
+│   ├── 06_vistas.sql                # 2 vistas seguras para ocultar datos
+│   ├── 07_seguridad.sql             # Usuario restringido (usr_biblioteca_app)
+│   ├── 07_pruebas_seguridad.sql     # Pruebas de permisos permitidos y denegados (Error 1142)
+│   ├── 08_transacciones.sql         # Pruebas de transacciones (COMMIT y ROLLBACK)
+│   └── 09_concurrencia_guiada.sql   # Guía para dos terminales: Deadlock y Aislamiento
+├── src/                             # Código Java con JDBC nativo
+│   ├── config.properties            # Datos de conexión a MySQL
 │   └── tpi/biblioteca/
-│       ├── config/                  # DatabaseConnection
-│       ├── entities/                # BaseEntity, Libro, FichaBibliografica
-│       ├── dao/                     # Interfaces y DAOs seguros con PreparedStatement
-│       ├── service/                 # Servicios transaccionales y lógica de Retry ante Deadlock
-│       ├── main/                    # Menú de consola existente de Programación II
+│       ├── config/                  # Clase de conexión JDBC
+│       ├── entities/                # Entidades Libro y FichaBibliografica
+│       ├── dao/                     # Consultas con PreparedStatement
+│       ├── service/                 # Lógica de negocio y reintento ante Deadlock
+│       ├── main/                    # Menú de consola de Programación II
 │       └── demo/
-│           ├── DemoSqlInjection.java # Prueba práctica comparativa anti-inyección SQL
-│           └── DemoDeadlockRetry.java# Prueba concurrente multihilo con retry ante error 1213
+│           ├── DemoSqlInjection.java # Prueba práctica de prevención de SQL Injection
+│           └── DemoDeadlockRetry.java# Prueba concurrente con retry ante Error 1213
 ├── lib/
-│   └── mysql-connector-j-9.5.0.jar  # Driver oficial JDBC de MySQL
+│   └── mysql-connector-j-9.5.0.jar  # Driver JDBC oficial de MySQL
 └── README.md
 ```
 
 ---
 
-## 🚀 Guía de Ejecución de Scripts SQL (En Orden)
+## Orden de Ejecución de los Scripts SQL
 
-Todos los scripts deben ejecutarse en orden contra la base de datos MySQL local:
+Todos los scripts se ejecutan en orden desde la consola de MySQL o desde tu cliente preferido:
 
 ```bash
-# 1. Crear el esquema y restricciones de integridad (Etapa 1)
+# 1. Crear la base de datos y las tablas con sus restricciones (Etapa 1)
 mysql -u root -p < sql/01_esquema.sql
 
-# 2. (Opcional) Probar restricciones válidas y rechazos (Etapa 1)
+# 2. Probar que las restricciones rechacen datos inválidos (Etapa 1)
 mysql -u root -p tpi_biblioteca < sql/01_pruebas_restricciones.sql
 
-# 3. Cargar vocabularios y catálogos semilla (Etapa 2)
+# 3. Cargar las listas semilla de autores y editoriales (Etapa 2)
 mysql -u root -p tpi_biblioteca < sql/02_catalogos.sql
 
-# 4. Ejecutar la carga masiva de 20.000 registros en SQL puro (Etapa 2)
+# 4. Generar los 20.000 registros con SQL puro (Etapa 2)
 mysql -u root -p tpi_biblioteca < sql/03_carga_masiva.sql
 
-# 5. Ejecutar verificaciones de consistencia (0 huérfanos, cardinalidad 1:1)
+# 5. Comprobar que no haya huérfanos ni duplicados (Etapa 2)
 mysql -u root -p tpi_biblioteca < sql/03_verificaciones_consistencia.sql
 
-# 6. Crear índices secundarios de optimización (Etapa 3)
+# 6. Crear los índices secundarios (Etapa 3)
 mysql -u root -p tpi_biblioteca < sql/04_indices.sql
 
-# 7. Ejecutar consultas analíticas complejas (Etapa 3)
+# 7. Ejecutar las 4 consultas de negocio (Etapa 3)
 mysql -u root -p tpi_biblioteca < sql/05_consultas.sql
 
-# 8. Ejecutar mediciones comparativas de rendimiento (Etapa 3)
+# 8. Medir los tiempos con y sin índices con EXPLAIN (Etapa 3)
 mysql -u root -p tpi_biblioteca < sql/05_explain.sql
 
-# 9. Crear las vistas seguras de ocultamiento (Etapa 4)
+# 9. Crear las dos vistas seguras (Etapa 4)
 mysql -u root -p tpi_biblioteca < sql/06_vistas.sql
 
-# 10. Crear usuario restringido y asignar menores privilegios (Etapa 4)
+# 10. Crear el usuario de aplicación usr_biblioteca_app (Etapa 4)
 mysql -u root -p tpi_biblioteca < sql/07_seguridad.sql
 
-# 11. Ejecutar pruebas de acceso como usuario restringido (Etapa 4)
+# 11. Probar los permisos denegados con el usuario de aplicación (Etapa 4)
 mysql -u usr_biblioteca_app -pAppPass123! tpi_biblioteca < sql/07_pruebas_seguridad.sql
 
-# 12. Ejecutar transacciones SQL de prueba (Etapa 5)
+# 12. Probar operaciones atómicas con COMMIT y ROLLBACK (Etapa 5)
 mysql -u root -p tpi_biblioteca < sql/08_transacciones.sql
 
-# 13. Para la simulación interactiva de Deadlock y niveles de aislamiento (Etapa 5):
-# Seguir el guion guiado paso a paso en sql/09_concurrencia_guiada.sql en dos terminales simultáneas.
+# 13. Para la simulación de Deadlock y Aislamiento en 2 terminales (Etapa 5):
+# Seguir los pasos indicados en sql/09_concurrencia_guiada.sql
 ```
 
 ---
 
-## ☕ Compilación y Ejecución de Demos en Java
+## Cómo Ejecutar las Demos en Java
 
-Desde la raíz del proyecto:
+Desde la carpeta raíz del proyecto:
 
-### 1. Compilar todo el proyecto:
-```bash
-javac -cp "lib/mysql-connector-j-9.5.0.jar:src" $(find src -name "*.java")
-```
+1. **Compilar el código Java:**
+   ```bash
+   javac -cp "lib/mysql-connector-j-9.5.0.jar:src" -d bin src/tpi/biblioteca/**/*.java
+   ```
 
-### 2. Ejecutar Demo de Seguridad Anti-SQL Injection (Etapa 4):
-```bash
-java -cp "lib/mysql-connector-j-9.5.0.jar:src" tpi.biblioteca.demo.DemoSqlInjection
-```
+2. **Copiar el archivo de configuración a la carpeta bin:**
+   ```bash
+   cp src/config.properties bin/
+   ```
 
-### 3. Ejecutar Demo Concurrente de Deadlock con Retry Automático (Etapa 5):
-```bash
-java -cp "lib/mysql-connector-j-9.5.0.jar:src" tpi.biblioteca.demo.DemoDeadlockRetry
-```
+3. **Ejecutar la demostración de SQL Injection (Etapa 4):**
+   ```bash
+   java -cp "lib/mysql-connector-j-9.5.0.jar:bin" tpi.biblioteca.demo.DemoSqlInjection
+   ```
+
+4. **Ejecutar la prueba de Deadlock con Retry automático (Etapa 5):**
+   ```bash
+   java -cp "lib/mysql-connector-j-9.5.0.jar:bin" tpi.biblioteca.demo.DemoDeadlockRetry
+   ```

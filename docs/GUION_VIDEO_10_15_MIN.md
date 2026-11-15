@@ -1,88 +1,162 @@
-# GUION TÉCNICO Y DEFENSA ORAL EN VIDEO (10 A 15 MINUTOS)
+# GUION PARA LA DEFENSA EN VIDEO (10 A 15 MINUTOS)
 ## TFI BASES DE DATOS I – TECNICATURA UNIVERSITARIA EN PROGRAMACIÓN (UTN)
 
-**Estudiante:** Esteban Oviedo  
-**Duración Objetivo:** 12 a 14 minutos  
-**Herramientas en Pantalla:** Visual Studio Code / IDE, MySQL Workbench / Terminal, Presentación o Diagrama DER.
+**Alumno:** Esteban Oviedo  
+**Duración estimada:** 12 a 13 minutos  
+**Herramientas para mostrar en pantalla:**
+1. Diapositiva o imagen con el diagrama DER.
+2. Editor de código (VS Code) con los scripts SQL y archivos Java.
+3. Consola / Terminal conectada a MySQL local (o Workbench / TablePlus).
 
 ---
 
-### ESTRUCTURA TEMPORAL Y ESCALETA DEL VIDEO
+### ESTRUCTURA DEL VIDEO (TIEMPOS RECOMENDADOS)
 
+```text
++---------------+--------------------------------------------+-------------------------------+
+| Minuto        | Bloque / Tema                              | Qué mostrar en pantalla       |
++---------------+--------------------------------------------+-------------------------------+
+| 00:00 - 01:30 | 1. Presentación y explicación del dominio  | Portada y Diagrama DER        |
+| 01:30 - 03:30 | 2. Etapa 1: Tablas, claves y errores CHECK | sql/01_esquema.sql + Terminal |
+| 03:30 - 05:30 | 3. Etapa 2: Carga masiva y consistencia    | sql/03_carga_masiva.sql       |
+| 05:30 - 08:00 | 4. Etapa 3: Consultas, índices y EXPLAIN   | sql/05_consultas y explain    |
+| 08:00 - 10:30 | 5. Etapa 4: Seguridad, vistas y Java demo  | sql/07_seguridad y Java       |
+| 10:30 - 13:00 | 6. Etapa 5: Deadlock en 2 terminales y Java| 2 terminales MySQL + Java     |
+| 13:00 - 14:00 | 7. Conclusión y cierre                     | Diapositiva final / Resumen   |
++---------------+--------------------------------------------+-------------------------------+
 ```
-┌──────────────┬────────────────────────────────────────────┬─────────────────────────────┐
-│ Minuto       │ Sección / Tema                             │ Pantalla a Mostrar          │
-├──────────────┼────────────────────────────────────────────┼─────────────────────────────┤
-│ 00:00 - 01:30│ Presentación, Dominio y Arquitectura 1:1   │ DER + Estructura de Proyecto│
-│ 01:30 - 03:30│ Etapa 1: DDL, Constraints y Pruebas Error  │ 01_esquema.sql + Terminal   │
-│ 03:30 - 05:30│ Etapa 2: Carga Masiva (20k) y Consistencia │ 03_carga_masiva.sql + Conteo│
-│ 05:30 - 08:00│ Etapa 3: Consultas y Benchmark con EXPLAIN │ 05_consultas + 05_explain   │
-│ 08:00 - 10:30│ Etapa 4: Seguridad, Vistas y Anti-SQL Inj. │ 07_seguridad + Java Demo    │
-│ 10:30 - 13:00│ Etapa 5: Concurrencia, Deadlock y Retry    │ 2 Terminales + Java Demo    │
-│ 13:00 - 14:00│ Conclusiones finales y Cierre              │ Diapositiva / Conclusiones  │
-└──────────────┴────────────────────────────────────────────┴─────────────────────────────┘
-```
 
 ---
 
-### MINUTO A MINUTO DETALLADO
+## GUION PASO A PASO (QUÉ MOSTRAR Y QUÉ DECIR)
 
-#### 1. Presentación y Justificación del Dominio (00:00 - 01:30)
-* **Qué mostrar:** Diagrama Entidad-Relación y diapositiva inicial con nombre y datos de la materia.
+### 1. Presentación y Dominio (00:00 a 01:30)
+
+* **En pantalla:** Portada con tus datos y el Diagrama Entidad-Relación (DER).
 * **Qué decir:**
-  > *"Buenas tardes, profesores. Mi nombre es Esteban Oviedo y a continuación presento la defensa oral y práctica de mi Trabajo Final Integrador de Bases de Datos I. Para este trabajo continué con el dominio abordado en Programación II: un sistema de gestión de Libros y Fichas Bibliográficas, modelado con una relación 1 a 1 unidireccional y desarrollado bajo una arquitectura híbrida entre MySQL 8+ y Java con JDBC nativo. El objetivo fue garantizar la integridad de los datos a nivel físico, simular un volumen real con carga masiva en SQL puro, optimizar consultas mediante indexación, proteger el sistema con mínimos privilegios y diseñar servicios transaccionales con tolerancia a fallos por concurrencia."*
+> *"Buenas tardes, profesores. Mi nombre es Esteban Oviedo y voy a presentar mi Trabajo Final Integrador de Bases de Datos I.*
+> 
+> *Para este proyecto continué con el sistema que había desarrollado en Programación II: una biblioteca para gestionar Libros y Fichas Bibliográficas.*
+> 
+> *El modelo tiene solamente dos tablas: `ficha_bibliografica`, donde guardamos los datos técnicos del ejemplar físico (como ISBN, clasificación Dewey y estantería), y `libro`, donde guardamos los datos de la obra (como título, autor y año de edición).*
+> 
+> *La relación entre ambas es de 1 a 1 estricta: cada libro tiene una sola ficha, y una ficha no se puede compartir entre varios libros. Para lograr esto a nivel físico en MySQL, pusimos la clave foránea `ficha_id` dentro de la tabla `libro` con una restricción `UNIQUE`.*
+> 
+> *A lo largo de este video voy a mostrar cómo resolvimos las cinco etapas exigidas por la cátedra directamente sobre nuestra base de datos local."*
 
 ---
 
-#### 2. Etapa 1: Esquema, Restricciones y Pruebas de Fallo (01:30 - 03:30)
-* **Qué mostrar:** Abrir `sql/01_esquema.sql` y luego ejecutar en terminal `sql/01_pruebas_restricciones.sql`.
+### 2. Etapa 1: Tablas, Restricciones y Pruebas de Fallo (01:30 a 03:30)
+
+* **En pantalla:** Abrís `sql/01_esquema.sql` en VS Code y luego mostrás la terminal con la salida de `sql/01_pruebas_restricciones.sql`.
 * **Qué decir:**
-  > *"Comenzando con la Etapa 1, en `01_esquema.sql` definimos las tablas `ficha_bibliografica` y `libro`. Para la relación 1 a 1, la clave foránea `ficha_id` en la tabla `libro` cuenta con una restricción `UNIQUE`, imposibilitando que dos libros apunten a la misma ficha.
-  > Además de las claves primarias y foráneas con `ON DELETE SET NULL`, implementamos restricciones `CHECK` evaluadas en el motor: validación de longitud para títulos y autores no vacíos, y un rango histórico coherente para el año de edición (entre 868 y 2026).
-  > En pantalla vemos la ejecución de `01_pruebas_restricciones.sql`: las inserciones correctas persisten sin inconvenientes, mientras que las inválidas son rechazadas por el motor con errores específicos: el Error 3819 por violación de la restricción CHECK de año, y el Error 1062 por duplicación de clave única."*
+> *"Comenzamos con la Etapa 1. En `01_esquema.sql` creamos las tablas usando el motor InnoDB.*
+> 
+> *Para asegurar que los datos no se rompan ni queden huérfanos, definimos varias restricciones en el motor:*
+> * *Primero, la clave foránea `fk_libro_ficha` tiene `ON DELETE SET NULL`. Esto significa que si por alguna razón damos de baja una ficha física, el registro del libro no se pierde; simplemente queda su campo `ficha_id` en nulo.*
+> * *Segundo, pusimos restricciones `CHECK`: validamos que el título y el autor no queden vacíos, y que el año de edición sea coherente, entre el año 868 y el 2026.*
+> * *Tercero, pusimos `UNIQUE` tanto en el ISBN como en `ficha_id` para garantizar que no haya duplicados ni fichas repetidas.*
+> 
+> *Ahora vemos en la terminal las pruebas de `01_pruebas_restricciones.sql`. Cuando insertamos datos correctos, MySQL responde `Query OK`. Pero cuando intentamos cargar un libro con año 2999, MySQL lo frena con el `Error 3819` por violar el CHECK de año. Y si intentamos asignar una misma ficha a dos libros distintos, salta el `Error 1062` de clave duplicada. Con esto comprobamos que la base de datos se protege sola a nivel físico, sin depender de que la aplicación valide bien o mal."*
 
 ---
 
-#### 3. Etapa 2: Carga Masiva con SQL Puro y Verificación (03:30 - 05:30)
-* **Qué mostrar:** Abrir `sql/03_carga_masiva.sql` y ejecutar en MySQL `sql/03_verificaciones_consistencia.sql`.
+### 3. Etapa 2: Carga Masiva y Verificación de Consistencia (03:30 a 05:30)
+
+* **En pantalla:** Mostrás rápido `sql/03_carga_masiva.sql` y ejecutás en terminal `sql/03_verificaciones_consistencia.sql`.
 * **Qué decir:**
-  > *"Para la Etapa 2, la consigna exigía generar al menos 10.000 registros utilizando exclusivamente mecanismos nativos de SQL.
-  > Diseñamos una estrategia sumamente eficiente basada en el producto cartesiano de 4 conjuntos de 10 dígitos, generando 10.000 números enteros en milisegundos. A partir de tablas semilla y aritmética modular, insertamos 10.000 fichas y 10.000 libros, alcanzando 20.000 registros en total.
-  > La integridad referencial y la cardinalidad 1 a 1 se garantizaron asignando `libro.ficha_id = n`.
-  > Al ejecutar `03_verificaciones_consistencia.sql`, comprobamos en vivo: 20.000 registros totales, exactamente 0 claves foráneas huérfanas, 0 duplicados en la relación 1 a 1, y un 2% de bajas lógicas para validar posteriormente las consultas y vistas."*
+> *"En la Etapa 2, la consigna pedía cargar más de 10.000 registros usando exclusivamente SQL puro, sin scripts externos ni código Java.*
+> 
+> *Para hacerlo de forma rápida y sin trabar el servidor, armamos un generador de números usando un producto cartesiano (`CROSS JOIN`) de cuatro tablas chicas de 10 dígitos. Eso nos genera una secuencia de 10.000 números en apenas milisegundos.*
+> 
+> *Usando esa serie y tablas de catálogo con autores y editoriales reales, insertamos 10.000 fichas y 10.000 libros. Cada libro se vinculó exactamente con su ficha correspondiente mediante `ficha_id = id`, manteniendo la relación 1 a 1.*
+> 
+> *En pantalla vemos el resultado de `03_verificaciones_consistencia.sql`: tenemos exactamente 20.002 filas en total (10.001 de cada tabla sumando los datos iniciales), 0 claves foráneas huérfanas, 0 duplicados en la relación 1 a 1, y un 2% de bajas lógicas para poder probar los filtros más adelante."*
 
 ---
 
-#### 4. Etapa 3: Consultas Complejas, Índices y Benchmarking (05:30 - 08:00)
-* **Qué mostrar:** Abrir `sql/05_consultas.sql` y luego ejecutar `sql/05_explain.sql`.
+### 4. Etapa 3: Consultas Complejas, Índices y Rendimiento (05:30 a 08:00)
+
+* **En pantalla:** Mostrás `sql/05_consultas.sql` y la tabla comparativa de `05_explain.sql`.
 * **Qué decir:**
-  > *"En la Etapa 3 desarrollamos 4 consultas complejas de valor para el negocio bibliotecario: dos con JOIN vinculando libros y fichas para localización física y análisis de inventario, una con GROUP BY y HAVING para detectar editoriales dominantes con más de 650 obras, y una consulta correlacionada para identificar libros que superan el promedio de año de edición de su autor.
-  > Para el análisis de rendimiento con y sin índices, ejecutamos `05_explain.sql` comparando con `EXPLAIN ANALYZE` tres corridas.
-  > En la consulta de igualdad por autor, sin índice el motor realiza un `Table scan` completo sobre las 10.000 filas tardando 9.2 milisegundos con un costo de 1418. Con el índice secundario `idx_libro_autor`, el motor realiza un `Index lookup` directo, bajando el tiempo a 2.3 milisegundos y el costo a 182, logrando una aceleración de casi 4 veces."*
+> *"En la Etapa 3 diseñamos cuatro consultas útiles para la gestión de la biblioteca:*
+> 1. *La primera hace un `JOIN` entre libros y fichas para mostrar qué libros en español tenemos activos y en qué estantería están guardados.*
+> 2. *La segunda agrupa por categoría temática e idioma, calculando totales de libros y años promedio de publicación.*
+> 3. *La tercera usa `GROUP BY` y `HAVING` para encontrar las editoriales que tienen más de 650 libros en el catálogo.*
+> 4. *La cuarta es una subconsulta correlacionada: busca los libros de cada autor que se publicaron después de su año promedio, es decir, sus obras más recientes.*
+> 
+> *Para la parte de optimización, la consigna exigía comparar el rendimiento con y sin índices, haciendo 3 corridas de cada una y calculando la mediana real.*
+> 
+> *Tomemos por ejemplo la búsqueda por autor:*
+> * *Sin índice, MySQL tiene que revisar las 10.000 filas una por una (`Table scan`). La mediana de tiempo fue de casi 8 milisegundos.*
+> * *Cuando creamos el índice secundario `idx_libro_autor`, MySQL va directo a las filas usando una búsqueda indexada (`Index lookup`). El tiempo bajó a 2.4 milisegundos, es decir, más de 3 veces más rápido.*
+> 
+> *Hicimos las 18 mediciones reales y verificamos los planes con `EXPLAIN ANALYZE`, comprobando cómo el índice reduce el costo de procesamiento del motor."*
 
 ---
 
-#### 5. Etapa 4: Seguridad, Vistas y Mitigación de SQL Injection (08:00 - 10:30)
-* **Qué mostrar:** Mostrar `sql/07_seguridad.sql`, ejecutar en terminal la prueba de comandos denegados y luego ejecutar la clase Java `DemoSqlInjection.java`.
+### 5. Etapa 4: Seguridad, Vistas y Prevención de SQL Injection (08:00 a 10:30)
+
+* **En pantalla:** Mostrás `sql/07_seguridad.sql`, las pruebas de acceso denegado y la ejecución de `DemoSqlInjection.java` en consola.
 * **Qué decir:**
-  > *"En la Etapa 4 aplicamos el principio de menor privilegio. Creamos el usuario `usr_biblioteca_app`, al cual le otorgamos acceso de lectura a dos vistas seguras (`vista_catalogo_publico` y `vista_estadisticas_editorial`), que ocultan las bajas lógicas, las claves internas y la estantería física del depósito.
-  > Si este usuario intenta ejecutar un `DELETE` físico o un `DROP TABLE`, MySQL responde con el `Error 1142: command denied`.
-  > En la capa de aplicación, reutilizamos los DAO desarrollados en Java. En `DemoSqlInjection.java` realizamos la prueba comparativa: ante la entrada maliciosa `' OR '1'='1`, una consulta concatenada vulnerable evalúa a verdadero y expone ilegítimamente 9.801 registros. En contraste, nuestro `JdbcLibroDao` con `PreparedStatement` envía el valor como un literal aislado mediante el protocolo binario, devolviendo 0 registros y neutralizando por completo el vector de ataque."*
+> *"En la Etapa 4 aplicamos el principio de menor privilegio. Creamos un usuario específico para la aplicación llamado `usr_biblioteca_app`.*
+> 
+> *A este usuario no le dimos permisos de administrador ni de borrado físico. Solo le permitimos consultar dos vistas seguras y hacer operaciones básicas sobre libros y fichas.*
+> 
+> *Las vistas cumplen dos funciones de privacidad: `vista_catalogo_publico` oculta los libros dados de baja, las claves internas y la estantería del depósito; y `vista_estadisticas_editorial` muestra solo números agregados sin exponer títulos individuales.*
+> 
+> *Si este usuario intenta hacer un `DELETE` directo o borrar una tabla con `DROP TABLE`, MySQL lo rechaza inmediatamente con el `Error 1142: comando denegado`.*
+> 
+> *Por último, en Java probamos la seguridad frente a SQL Injection con `DemoSqlInjection.java`:*
+> * *Si armamos la consulta concatenando texto con `Statement` y el usuario ingresa comillas con `' OR '1'='1`, la consulta se altera, la condición se vuelve siempre verdadera y expone los 9.801 libros de la base.*
+> * *En cambio, usando `PreparedStatement` como en nuestro DAO, el valor viaja separado como un dato literal. La base de datos busca literalmente ese texto, no encuentra nada y devuelve 0 filas, evitando que nos alteren la consulta."*
 
 ---
 
-#### 6. Etapa 5: Concurrencia, Deadlock y Retry con Backoff (10:30 - 13:00)
-* **Qué mostrar:** Dos ventanas de terminal abiertas simulando Sesión 1 y Sesión 2 (`sql/09_concurrencia_guiada.sql`), y a continuación ejecutar en terminal `DemoDeadlockRetry.java`.
+### 6. Etapa 5: Concurrencia, Deadlock y Retry en Java (10:30 a 13:00)
+
+* **En pantalla:** Dos terminales abiertas ejecutando paso a paso `sql/09_concurrencia_guiada.sql`, y luego ejecutás `DemoDeadlockRetry.java`.
 * **Qué decir:**
-  > *"Finalmente, en la Etapa 5 analizamos la concurrencia y las transacciones ACID.
-  > En primer lugar, demostramos en dos sesiones simultáneas de MySQL cómo se produce un interbloqueo o Deadlock al cruzar actualizaciones sobre dos libros en orden inverso. InnoDB detecta el ciclo de espera circular y emite el `Error 1213: Deadlock found when trying to get lock`.
-  > Luego comparamos los niveles de aislamiento: demostramos que en `READ COMMITTED` una transacción lectora puede experimentar lecturas no repetibles si otra transacción confirma cambios intermedios, mientras que en `REPEATABLE READ`, gracias al MVCC de InnoDB y los undo logs, la lectura se mantiene consistente a lo largo de toda la transacción.
-  > Para cerrar la integración con Java, ejecutamos `DemoDeadlockRetry.java`. En este test, dos hilos entrelazan sus transacciones forzando el deadlock; el servicio captura el código 1213, aplica una pausa con retroceso exponencial (`backoff`) y reintenta automáticamente la operación, logrando que el 100% de las transacciones finalicen con éxito sin que la aplicación se caiga ni corrompa los datos."*
+> *"En la Etapa 5 trabajamos con transacciones concurrentes y control de bloqueos.*
+> 
+> *Primero provocamos un Deadlock en vivo usando dos terminales de MySQL:*
+> * *En la Terminal 1 abrimos una transacción y modificamos el libro 1.*
+> * *En la Terminal 2 abrimos otra transacción y modificamos el libro 2.*
+> * *Ahora la Terminal 1 intenta modificar el libro 2, y se queda esperando porque está bloqueado.*
+> * *Y cuando la Terminal 2 intenta modificar el libro 1, se produce un ciclo de espera mutua: ninguna puede avanzar.*
+> 
+> *Ahí vemos cómo InnoDB detecta automáticamente el interbloqueo y cancela una de las dos con el `Error 1213: Deadlock found`.*
+> 
+> *También comparamos niveles de aislamiento:*
+> * *En `READ COMMITTED`, si una sesión modifica un dato y hace commit, la otra sesión ve el cambio en medio de su transacción (lectura no repetible).*
+> * *En `REPEATABLE READ`, que es el nivel por defecto de MySQL, la transacción mantiene una foto fija de los datos (gracias al mecanismo MVCC de InnoDB) y no ve cambios ajenos hasta terminar su propia transacción.*
+> 
+> *Para resolver el problema del Deadlock desde el software, en Java implementamos una política de reintentos con pausa progresiva (`retry con backoff`).*
+> 
+> *Al ejecutar `DemoDeadlockRetry.java`, dos hilos compiten por los mismos libros en orden cruzado. Cuando uno recibe el error 1213 de MySQL, en lugar de caerse la aplicación, el servicio atrapa la excepción, espera 200 milisegundos y vuelve a intentar la operación. En el segundo intento, como el otro hilo ya liberó los registros, la transacción termina con éxito (2 de 2 completadas)."*
 
 ---
 
-#### 7. Conclusiones y Cierre (13:00 - 14:00)
-* **Qué mostrar:** Diapositiva final con resumen de logros y repositorio.
+### 7. Conclusiones y Cierre (13:00 a 14:00)
+
+* **En pantalla:** Diapositiva con resumen de los puntos clave o el repositorio GitHub.
 * **Qué decir:**
-  > *"Como conclusión, pudimos verificar que la articulación entre una base de datos relacional robusta y una arquitectura de software orientada a servicios permite construir aplicaciones seguras, escalables y resilientes. Cada etapa de la consigna fue cumplida estrictamente sobre datos y pruebas reales en MySQL.
-  > Muchas gracias por su atención."*
+> *"Para cerrar, este trabajo integrador nos permitió comprobar en la práctica que el diseño de una base de datos no termina en armar las tablas:*
+> * *Las restricciones físicas garantizan que los datos sigan sanos aunque la aplicación falle.*
+> * *La carga masiva nos permitió medir con datos reales el impacto positivo de los índices.*
+> * *La seguridad con usuarios restringidos y vistas evita accesos indebidos.*
+> * *Y el manejo de transacciones con reintento automático hace que el sistema sea tolerante a fallos cuando varios usuarios operan al mismo tiempo.*
+> 
+> *Todos los scripts y el código Java quedaron organizados y listos para ser reproducidos en orden.*
+> 
+> *Muchas gracias por su tiempo."*
+
+---
+
+### CHECKLIST RÁPIDA ANTES DE GRABAR EL VIDEO
+
+- [ ] Tener MySQL levantado con la base `tpi_biblioteca` cargada (20.002 registros).
+- [ ] Tener dos terminales listas para la prueba de Deadlock.
+- [ ] Tener compilado el proyecto Java (`javac -cp "lib/*" -d bin src/tpi/biblioteca/**/*.java`).
+- [ ] Tener abierto VS Code con los archivos SQL visibles en el explorador.
+- [ ] Mantener un tono tranquilo, hablar pausado y mostrar la pantalla mientras explicás cada punto.

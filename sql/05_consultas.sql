@@ -1,17 +1,16 @@
 -- =============================================================================
 -- TRABAJO FINAL INTEGRADOR - BASES DE DATOS I (UTN)
--- Script 05: Consultas Complejas y Reportes de Valor de Negocio (Etapa 3)
--- Incluye 2 consultas con JOIN, 1 con GROUP BY + HAVING y 1 con Subconsulta.
+-- Script 05: Consultas de Negocio (Etapa 3)
+-- Contiene: 2 consultas con JOIN, 1 con GROUP BY + HAVING y 1 con Subconsulta.
 -- =============================================================================
 
 USE tpi_biblioteca;
 
 -- -----------------------------------------------------------------------------
--- CONSULTA 1: Catálogo Físico de Obras Activas (JOIN 1:1)
--- Utilidad Práctica:
--- Esta consulta permite al personal bibliotecario y a los lectores localizar de forma
--- inmediata en qué estantería física se encuentra cada ejemplar activo (no dado de baja),
--- vinculando la ficha técnica (ISBN, Dewey, estantería) con los datos bibliográficos.
+-- CONSULTA 1 (JOIN 1:1): Ubicación de libros activos en estanterías
+-- Qué hace:
+-- Muestra los libros activos en idioma Español junto con los datos de su ficha
+-- (ISBN, categoría Dewey y estantería), para saber en qué lugar físico están guardados.
 -- -----------------------------------------------------------------------------
 SELECT 
     l.id AS libro_id,
@@ -33,11 +32,11 @@ LIMIT 50;
 
 
 -- -----------------------------------------------------------------------------
--- CONSULTA 2: Inventario Analítico por Clasificación Temática e Idioma (JOIN + Agregación)
--- Utilidad Práctica:
--- Brinda a la dirección de la biblioteca una visión estratégica del acervo bibliográfico,
--- calculando el volumen de títulos, el rango temporal (año mínimo y máximo) y el año 
--- promedio por categoría Dewey e idioma para orientar compras y descarte de material.
+-- CONSULTA 2 (JOIN + Agregación): Cantidad de libros y años por categoría e idioma
+-- Qué hace:
+-- Agrupa los libros por clasificación Dewey e idioma. Calcula cuántos ejemplares
+-- hay, el año promedio de edición y cuáles son los libros más antiguos y más nuevos,
+-- para conocer la composición general del catálogo de la biblioteca.
 -- -----------------------------------------------------------------------------
 SELECT 
     f.clasificacion_dewey,
@@ -54,11 +53,10 @@ ORDER BY f.clasificacion_dewey, total_ejemplares DESC;
 
 
 -- -----------------------------------------------------------------------------
--- CONSULTA 3: Editoriales Principales con Alto Volumen de Catálogo (GROUP BY + HAVING)
--- Utilidad Práctica:
--- Filtra y categoriza a las casas editoriales con presencia dominante en la biblioteca
--- (más de 650 títulos activos en acervo). Facilita la gestión de convenios, compras
--- corporativas por lote y auditoría de concentración de proveedores editoriales.
+-- CONSULTA 3 (GROUP BY + HAVING): Editoriales con más de 650 libros activos
+-- Qué hace:
+-- Cuenta cuántos libros activos tiene cada editorial y filtra únicamente las que
+-- superan los 650 títulos, mostrando también el primer y último año que editaron.
 -- -----------------------------------------------------------------------------
 SELECT 
     l.editorial,
@@ -74,11 +72,11 @@ ORDER BY total_titulos_activos DESC;
 
 
 -- -----------------------------------------------------------------------------
--- CONSULTA 4: Obras Contemporáneas por Autor (Subconsulta Correlacionada)
--- Utilidad Práctica:
--- Identifica títulos cuya fecha de edición supera el año promedio de publicación de
--- las obras de su mismo autor. Sirve para curaduría literaria, exposiciones de obras
--- recientes y recomendaciones de catálogo basadas en la última etapa de cada autor.
+-- CONSULTA 4 (Subconsulta Correlacionada): Libros más recientes que el promedio del autor
+-- Qué hace:
+-- Compara cada libro con el año promedio en que publicó su autor. Muestra solo
+-- aquellos libros editados después de ese promedio, es decir, las obras más
+-- recientes de cada autor dentro del catálogo.
 -- -----------------------------------------------------------------------------
 SELECT 
     l.id,

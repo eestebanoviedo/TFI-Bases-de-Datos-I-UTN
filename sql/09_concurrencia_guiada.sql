@@ -1,63 +1,53 @@
 -- =============================================================================
 -- TRABAJO FINAL INTEGRADOR - BASES DE DATOS I (UTN)
--- Script 09: Guía de Concurrencia, Deadlocks y Niveles de Aislamiento (Etapa 5)
--- Instrucciones paso a paso para ejecutar en dos sesiones simultáneas de MySQL.
+-- Script 09: Guía de Concurrencia, Deadlocks y Aislamiento (Etapa 5)
+-- Instrucciones para probar en dos terminales simultáneas de MySQL.
 -- =============================================================================
 
 USE tpi_biblioteca;
 
 -- =============================================================================
--- PARTE A: REPRODUCCIÓN CONTROLADA DE DEADLOCK (Error 1213 / SQLSTATE 40001)
+-- PARTE A: CÓMO PROVOCAR UN DEADLOCK EN VIVO (Error 1213)
 -- =============================================================================
--- Instrucciones:
--- Abrir dos terminales o dos pestañas en MySQL Workbench / CLI:
--- Terminal 1 -> Sesión 1
--- Terminal 2 -> Sesión 2
+-- Abrí dos terminales conectadas a MySQL:
+-- Terminal 1 = Sesión 1
+-- Terminal 2 = Sesión 2
 
--- -----------------------------------------------------------------------------
--- [PASO 1] En SESIÓN 1: Iniciar transacción y bloquear Registro 1
--- -----------------------------------------------------------------------------
+-- [PASO 1] En Sesión 1: iniciamos transacción y modificamos el libro 1
 -- START TRANSACTION;
 -- UPDATE libro SET anio_edicion = 1991 WHERE id = 1;
--- (Bloqueo exclusivo X adquirido sobre id = 1. NO hacer COMMIT aún).
+-- (Queda bloqueado el registro 1. NO hagas COMMIT todavía).
 
--- -----------------------------------------------------------------------------
--- [PASO 2] En SESIÓN 2: Iniciar transacción y bloquear Registro 2
--- -----------------------------------------------------------------------------
+-- [PASO 2] En Sesión 2: iniciamos transacción y modificamos el libro 2
 -- START TRANSACTION;
 -- UPDATE libro SET anio_edicion = 1992 WHERE id = 2;
--- (Bloqueo exclusivo X adquirido sobre id = 2. NO hacer COMMIT aún).
+-- (Queda bloqueado el registro 2. NO hagas COMMIT todavía).
 
--- -----------------------------------------------------------------------------
--- [PASO 3] En SESIÓN 1: Intentar actualizar Registro 2 (Queda en espera / WAIT)
--- -----------------------------------------------------------------------------
+-- [PASO 3] En Sesión 1: intentamos modificar el libro 2 (queda en espera)
 -- UPDATE libro SET anio_edicion = 2001 WHERE id = 2;
--- (La sesión 1 se queda bloqueada esperando que la Sesión 2 libere id = 2).
+-- (La Sesión 1 se queda pausada esperando que la Sesión 2 libere el libro 2).
 
--- -----------------------------------------------------------------------------
--- [PASO 4] En SESIÓN 2: Intentar actualizar Registro 1 (¡DISPARA DEADLOCK!)
--- -----------------------------------------------------------------------------
+-- [PASO 4] En Sesión 2: intentamos modificar el libro 1 (¡salta el Deadlock!)
 -- UPDATE libro SET anio_edicion = 2002 WHERE id = 1;
--- (El motor detecta el ciclo de espera circular y aborta una de las dos transacciones).
+-- (Como las dos sesiones se esperan mutuamente, MySQL corta el ciclo y cancela una).
 
--- Resultado observado en la víctima elegida por InnoDB:
+-- Mensaje real de MySQL en la sesión elegida como víctima:
 -- ERROR 1213 (40001): Deadlock found when trying to get lock; try restarting transaction
--- La otra sesión se desbloquea y puede ejecutar COMMIT;
+-- La otra sesión se destraba sola y puede confirmar con:
+-- COMMIT;
 
 
 -- =============================================================================
 -- PARTE B: COMPARACIÓN DE NIVELES DE AISLAMIENTO
--- Comparación entre READ COMMITTED y REPEATABLE READ (Lecturas No Repetibles)
 -- =============================================================================
 
--- -----------------------------------------------------------------------------
--- CASO 1: Comportamiento en READ COMMITTED (Permite lecturas no repetibles)
--- -----------------------------------------------------------------------------
+-- CASO 1: En READ COMMITTED (permite lecturas no repetibles)
+-- ---------------------------------------------------------
 -- [Sesión 1]:
 -- SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
 -- START TRANSACTION;
 -- SELECT titulo, anio_edicion FROM libro WHERE id = 10;
--- (Retorna por ejemplo: anio_edicion = 1970)
+-- (Nos devuelve, por ejemplo: 1970)
 
 -- [Sesión 2]:
 -- UPDATE libro SET anio_edicion = 2024 WHERE id = 10;
@@ -65,18 +55,17 @@ USE tpi_biblioteca;
 
 -- [Sesión 1]:
 -- SELECT titulo, anio_edicion FROM libro WHERE id = 10;
--- (Resultado: ¡Cambia a 2024 dentro de la misma transacción! Lectura no repetible observada).
+-- (Resultado: ¡cambió a 2024 en la misma transacción! Vimos el cambio ajeno).
 -- COMMIT;
 
 
--- -----------------------------------------------------------------------------
--- CASO 2: Comportamiento en REPEATABLE READ (Por defecto en InnoDB, Snapshot MVCC)
--- -----------------------------------------------------------------------------
+-- CASO 2: En REPEATABLE READ (el modo por defecto de MySQL con InnoDB)
+-- -------------------------------------------------------------------
 -- [Sesión 1]:
 -- SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 -- START TRANSACTION;
 -- SELECT titulo, anio_edicion FROM libro WHERE id = 10;
--- (Retorna: anio_edicion = 2024 según el último commit).
+-- (Nos devuelve el año actual según el último commit, por ejemplo 2024)
 
 -- [Sesión 2]:
 -- UPDATE libro SET anio_edicion = 1980 WHERE id = 10;
@@ -84,7 +73,7 @@ USE tpi_biblioteca;
 
 -- [Sesión 1]:
 -- SELECT titulo, anio_edicion FROM libro WHERE id = 10;
--- (Resultado: Continúa retornando 2024. Se preserva la lectura consistente por MVCC).
+-- (Resultado: sigue mostrando 2024. No ve el cambio ajeno hasta terminar la transacción).
 -- COMMIT;
 -- SELECT titulo, anio_edicion FROM libro WHERE id = 10;
--- (Recién tras el COMMIT se visualiza 1980).
+-- (Recién después del COMMIT de la Sesión 1 vemos el valor 1980).
