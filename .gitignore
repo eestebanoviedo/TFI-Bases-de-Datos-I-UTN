@@ -3,3 +3,40 @@
 *.log
 bin/
 scratch/
+
+# Compilacion Java / Maven / Gradle
+target/
+build/
+out/
+.gradle/
+
+# IDE y archivos locales
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+*~
+
+# Temporales y caches
+*.tmp
+*.temp
+*.bak
+*.py[cod]
+__pycache__/
+.pytest_cache/
+.cache/
+.venv/
+venv/
+
+# Secretos y configuracion local (sin afectar archivos ya rastreados)
+.env
+.env.*
+!.env.example
+*.local
+*.secret
+secrets/
+
+# Sistema operativo
+Thumbs.db
+Desktop.ini
